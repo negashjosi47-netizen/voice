@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="am">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>የአማርኛ ድምፅ ውይይት</title>
+<style>
+  :root{--bg:#060d20;--card:#0a1330;--line:#17284f;--ink:#eaf2ff;--mut:#8ea0c0;--cy:#18c8ff;--bl:#0a6cff;--bad:#ff6b6b;--ok:#3ecf8e;--warn:#f5b83d}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(1200px 700px at 50% 45%,#0a1838 0%,var(--bg) 60%);color:var(--ink);
+       font-family:system-ui,"Noto Sans Ethiopic",sans-serif;overflow:hidden}
+  select,input,textarea,button{font:inherit;color:var(--ink)}
+
+  /* ---------- main stage ---------- */
+  .stage{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:16px}
+  .top{position:fixed;top:12px;right:12px;display:flex;gap:10px;z-index:5}
+  .ib{width:46px;height:46px;border-radius:14px;border:1px solid var(--line);background:#0a1330cc;font-size:20px;cursor:pointer}
+  .caption{min-height:56px;max-width:min(760px,90vw);text-align:center;font-size:19px;line-height:1.5;color:#cfe0ff}
+  .caption.u{color:var(--mut)}
+  .viz{display:flex;align-items:center;gap:clamp(14px,3vw,34px)}
+  .bars{display:flex;align-items:center;gap:clamp(5px,.9vw,14px);height:170px}
+  .bar{width:clamp(5px,1vw,14px);height:24px;border-radius:9px;background:linear-gradient(180deg,#18d4ff,#0a6cff)}
+  .orbwrap{position:relative;width:clamp(170px,26vw,270px);aspect-ratio:1;cursor:pointer}
+  .ring{position:absolute;inset:-22px;border-radius:50%;border:1px solid #14407a66;box-shadow:0 0 60px #0a6cff33;
+        transform:scale(calc(1 + var(--a,0)*.10));transition:transform .08s}
+  .orb{position:absolute;inset:0;border-radius:50%;border:9px solid #03060f;
+       background:linear-gradient(180deg,#e0526e 0%,#7a5ad6 25%,#0a6cff 50%,#5e86c9 72%,#e5ab2c 100%);
+       display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700;font-size:clamp(16px,2.2vw,22px);
+       text-shadow:0 1px 6px #0008;transform:scale(calc(1 + var(--a,0)*.05));transition:transform .08s}
+  .meta{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
+  .status{color:var(--cy);font-weight:700;font-size:19px}
+  .timer{display:flex;gap:10px;align-items:center;border:1px solid var(--line);background:#050b1c;border-radius:30px;padding:10px 20px;font-size:22px;letter-spacing:1px}
+  .timer svg{width:24px;height:24px;stroke:#2d7bff;fill:none;stroke-width:2}
+
+  /* ---------- modal ---------- */
+  .ov{position:fixed;inset:0;background:#02050dcc;backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:20;padding:14px}
+  .ov.show{display:flex}
+  .modal{width:min(560px,100%);max-height:96vh;overflow:auto;background:linear-gradient(180deg,#0a1536,#070f28);border:1px solid #1a3166;border-radius:34px;padding:26px 28px}
+  .mh{display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .mh h2{margin:0;font-size:22px}
+  .x{background:none;border:0;font-size:26px;cursor:pointer;color:#b8c6e0}
+  .modal label{display:block;font-weight:700;margin:18px 0 8px;font-size:17px}
+  .modal input,.modal select,.modal textarea{width:100%;background:#0b1740;border:1px solid #1a2f66;border-radius:18px;padding:15px 18px;font-size:17px}
+  .modal textarea{min-height:92px;resize:vertical}
+  .modal input:focus,.modal select:focus,.modal textarea:focus{outline:0;border-color:#1f5fff}
+  .go{width:100%;margin-top:22px;padding:19px;border:0;border-radius:18px;font-weight:800;font-size:18px;cursor:pointer;color:#fff;
+      background:linear-gradient(90deg,#0a62ff,#08b7d6)}
+
+  /* ---------- drawer ---------- */
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(430px,100%);background:#070f26;border-left:1px solid var(--line);
+          transform:translateX(100%);transition:transform .25s;z-index:15;overflow:auto;padding:16px}
+  .drawer.show{transform:none}
+  .drawer h3{margin:18px 0 8px;font-size:14px;color:var(--mut);letter-spacing:.3px}
+  .drawer input[type=text],.drawer select,.drawer textarea{width:100%;background:#0b1740;border:1px solid #1a2f66;border-radius:12px;padding:10px 12px}
+  .drawer textarea{min-height:70px}
+  .btn{background:#13265a;border:0;border-radius:12px;padding:11px 12px;cursor:pointer}
+  .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.row .btn{flex:1}
+  .st{display:flex;gap:8px;align-items:center;margin:6px 0;font-size:14px}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--mut);flex:none}
+  .ok .dot{background:var(--ok)}.bad .dot{background:var(--bad)}.warn .dot{background:var(--warn)}
+  #log{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto}
+  .m{padding:8px 12px;border-radius:12px;font-size:15px;max-width:90%}
+  .m.u{background:#1a3358;align-self:flex-end}.m.a{background:#1b2236;align-self:flex-start}.m.s{align-self:center;color:var(--mut);font-size:13px}
+  small{color:var(--mut)}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <button class="ib" id="bSet" title="ቅንብር">🎛</button>
+  <button class="ib" id="bDrw" title="ተጨማሪ">☰</button>
+</div>
+
+<div class="stage">
+  <div class="caption" id="cap">&nbsp;</div>
+  <div class="viz">
+    <div class="bars" id="barsL"></div>
+    <div class="orbwrap" id="orbwrap"><div class="ring"></div><div class="orb" id="orb">ዝግጁ</div></div>
+    <div class="bars" id="barsR"></div>
+  </div>
+  <div class="meta">
+    <div class="status" id="status">ዝግጁ ነው - ማይክሮፎኑን ይጫኑ</div>
+    <div class="timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span id="tm">00:00</span></div>
+  </div>
+</div>
+
+<!-- Settings modal -->
+<div class="ov" id="ov">
+  <div class="modal">
+    <div class="mh"><h2>🎛 የትውውቅና የውይይት ቅንብር</h2><button class="x" id="xClose">✕</button></div>
+
+    <label>የምታወራው ሰው ስም (አማራጭ)</label>
+    <input type="text" id="fName" placeholder="ለምሳሌ፦ አበበ">
+
+    <label>የተዋወቃችሁበት ሁኔታ (የት ነው የምታውቃቸው?)</label>
+    <textarea id="fRel" placeholder="ለምሳሌ፦ በትምህርት ቤት፣ በስራ ቦታ፣ በሰፈር…"></textarea>
+
+    <label>የውይይት ዓላማ</label>
+    <select id="fPurpose">
+      <option value="friend">ጓደኝነት (Casual Chat &amp; Friendship)</option>
+      <option value="romantic">የፍቅር / የግል ግንኙነት (Romantic / Personal)</option>
+      <option value="neighbor">የጎረቤትና ማህበረሰብ ውይይት (Neighborhood)</option>
+      <option value="work">ስራና ንግድ (Work &amp; Business)</option>
+      <option value="edu">ትምህርትና ምክር (Education &amp; Advice)</option>
+      <option value="fun">መዝናኛና ጨዋታ (Fun &amp; Games)</option>
+    </select>
+
+    <label>የውይይት ዘይቤ (Psychology Tone)</label>
+    <select id="fTone">
+      <option value="calm">ተረጋጋና አክብሮት ያለው (Respectful &amp; Calm)</option>
+      <option value="empathic">የቅርብና አሳማኝ (Empathic &amp; Persuasive)</option>
+      <option value="playful">ቀልደኛና ተጫዋች (Humorous &amp; Playful)</option>
+      <option value="direct">ሙያዊና ቀጥተኛ (Professional &amp; Direct)</option>
+    </select>
+
+    <button class="go" id="fGo">ቅንብሩን መዝግብና ውይይት ጀምር</button>
+  </div>
+</div>
+
+<!-- Drawer -->
+<div class="drawer" id="drawer">
+  <div class="row" style="margin:0 0 4px"><button class="btn" id="dClose">✕ ዝጋ</button></div>
+
+  <h3>የሌላ ሰው መልስ በጽሑፍ ማስገባት</h3>
+  <textarea id="inject" placeholder="እዚህ ይጻፉ… (በወረፋ ብዙ መስመር ይቻላል)"></textarea>
+  <div class="row">
+    <button class="btn" id="asUser">እንደ ተናጋሪው ቃል</button>
+    <button class="btn" id="asAI">AI ይናገረው</button>
+    <button class="btn" id="queue">ወደ ወረፋ</button>
+  </div>
+  <small>ወረፋ፦ <b id="qn">0</b> (ስክሪፕት ሁነታ ላይ AI በቅደም ተከተል ይናገራል)</small>
+
+  <h3>ድምፅ — የወንድ አማርኛ</h3>
+  <select id="voice"></select>
+  <div class="row"><small style="flex:1">ፍጥነት <b id="rv">0.97</b></small><small style="flex:1">pitch <b id="pv">0.90</b></small></div>
+  <input type="range" id="rate" min="0.75" max="1.25" step="0.01" value="0.97" style="width:100%">
+  <input type="range" id="pitch" min="0.6" max="1.2" step="0.01" value="0.90" style="width:100%">
+  <div class="row"><button class="btn" id="test">ድምፁን ሞክር</button></div>
+  <h3>የተፈጥሮ (neural) ድምፅ አገልጋይ — አማራጭ</h3>
+  <input type="text" id="tts" placeholder="https://your-server.example/tts">
+  <small>POST {text, voice:"am-ET-AmehaNeural"} → የድምፅ ፋይል (mp3/wav). ከተሞላ ከአሳሹ ድምፅ ይልቅ ይህ ይጠቀማል።</small>
+
+  <h3>ሁነታ</h3>
+  <select id="mode">
+    <option value="script">ስክሪፕት (AI የለም — ለሙከራ)</option>
+    <option value="live">ቀጥታ AI (የራስዎ አገልጋይ)</option>
+  </select>
+  <input type="text" id="endpoint" placeholder="https://your-server.example/chat" style="margin-top:8px">
+  <small>POST {system, messages} → {reply}</small>
+
+  <h3>የመሣሪያ ሁኔታ</h3>
+  <div id="checks"></div>
+
+  <h3>የውይይት ታሪክ</h3>
+  <div id="log"></div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const synth = window.speechSynthesis;
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+
+let active=false, busy=false, rec=null, voices=[], history=[], scriptQ=[], spkTok=0, curAudio=null;
+let cfg = {name:'',rel:'',purpose:'friend',tone:'calm'};
+let t0=0, tInt=null, fi=0;
+const fillers=["እሺ፣ ገባኝ። ቀጥል።","አዎ፣ እየሰማሁ ነው።","እ… ጥሩ፣ ትንሽ ዘርዝረው።","እሺ፣ ከዚያስ?"];
+
+/* ---------- settings ---------- */
+const PURPOSE={
+  friend:"ወዳጃዊ ተራ ጫወታ — እንደ ሁለት ጓደኛ",
+  romantic:"የግል/የፍቅር ግንኙነት ውይይት — ሞቅ ያለ፣ አክባሪ፣ ገደብ የሚያከብር",
+  neighbor:"የጎረቤትና የማህበረሰብ ጫወታ — ስለ ሰፈር፣ ቤተሰብ፣ ሰላምታ",
+  work:"የስራና የንግድ ውይይት",
+  edu:"የትምህርትና የምክር ውይይት — ግልጽ ማብራሪያና ገንቢ ምክር",
+  fun:"መዝናኛና ጨዋታ — ቀልድ፣ እንቆቅልሽ፣ ጨዋታዎች"};
+const TONE={
+  calm:"የተረጋጋና አክብሮት ያለው",
+  empathic:"የቅርብና ርኅራኄ ያለው፤ መጀመሪያ ያዳምጣል፣ ከዚያ በትህትና ያበረታታል (ማንንም አያስገድድም፣ አያታልልም)",
+  playful:"ቀልደኛና ተጫዋች (ቀለል ያለ ቀልድ)",
+  direct:"ሙያዊና ቀጥተኛ፣ ያለ ብዙ ማስተዋወቂያ"};
+const GREET={
+  friend:n=>`ሰላም${n}፣ እንዴት ነው? ምን አለ ዛሬ?`,
+  romantic:n=>`ሰላም${n}፣ ዛሬ እንዴት ነበር?`,
+  neighbor:n=>`ሰላም${n}፣ ሰላም ነው ቤተሰቡ? ሰፈሩስ እንዴት ነው?`,
+  work:n=>`ሰላም${n}፣ ስራው እንዴት እየሄደ ነው?`,
+  edu:n=>`ሰላም${n}፣ ዛሬ በምን ላግዝ?`,
+  fun:n=>`ሰላም${n}፣ እንጫወት እንዴ? ምን ይሻላል?`};
+
+function loadCfg(){ try{ const s=localStorage.getItem('amvoice'); if(s) cfg=Object.assign(cfg,JSON.parse(s)); }catch(e){}
+  $('fName').value=cfg.name; $('fRel').value=cfg.rel; $('fPurpose').value=cfg.purpose; $('fTone').value=cfg.tone; }
+function readCfg(){ cfg={name:$('fName').value.trim(),rel:$('fRel').value.trim(),purpose:$('fPurpose').value,tone:$('fTone').value};
+  try{ localStorage.setItem('amvoice',JSON.stringify(cfg)); }catch(e){} }
+function systemPrompt(){
+  return `አንተ ተፈጥሯዊ የሚያወራ ወንድ ነህ፤ በአማርኛ በድምፅ እየተነጋገርህ ነው።
+ከ${cfg.name||'የምታወራው ሰው'} ጋር ነው የምታወራው።${cfg.rel?` የተዋወቃችሁበት ሁኔታ፦ ${cfg.rel}።`:''}
+የውይይት ዓላማ፦ ${PURPOSE[cfg.purpose]}።
+የአነጋገር ዘይቤ፦ ${TONE[cfg.tone]}።
+ህጎች፦ እንደ ተራ ሰው በንግግር አማርኛ (በአፍ እንደሚነገረው) መልስ ስጥ። መልሶች አጭር (1–3 አጭር ዓረፍተ ነገሮች)። ዝርዝር፣ ቁጥር፣ ኮከብ፣ ኢሞጂ ወይም ማርክዳውን አትጠቀም — ድምፅ ሆኖ ይነበባል። አልፎ አልፎ «እ…»፣ «አይ»፣ «እሺ» ያሉ ተፈጥሯዊ ቃላት ተጠቀም። ስሙን በየመልሱ አትድገም። ራስህን «AI ረዳት ነኝ» ብለህ አትድገም፤ ስለ ማንነትህ ካልተጠየቅህ አታውራ፤ ነገር ግን በቅንነት «ሰው ነህ ወይስ AI?» ብሎ ከጠየቀ እውነቱን ተናገር። ማንንም አታታልል ወይም አታስገድድ።`;
+}
+
+/* ---------- visual ---------- */
+const N=11, barsL=[], barsR=[];
+for(let i=0;i<N;i++){ for(const [c,arr] of [['barsL',barsL],['barsR',barsR]]){ const d=document.createElement('div'); d.className='bar'; $(c).appendChild(d); arr.push(d);} }
+let amp=0.1, target=0.1, mode='idle';
+const MODES={idle:['ዝግጁ','ዝግጁ ነው - ማይክሮፎኑን ይጫኑ',0.10],listen:['እየሰማሁ...','እየሰማሁ ነው',0.28],think:['እያሰብኩ...','እያሰብኩ ነው',0.18],speak:['እየተናገርኩ...','እየተናገርኩ ነው',0.65]};
+function setMode(m){ mode=m; $('orb').textContent=MODES[m][0]; $('status').textContent=MODES[m][1]; target=MODES[m][2]; }
+function frame(t){
+  amp += (target-amp)*0.12;
+  const wob = mode==='speak' ? 0.35 : 0.12;
+  for(let i=0;i<N;i++){
+    const k = 1-Math.abs(i-(N-1)/2)/(N); // taller toward the middle... mirrored by side below
+    for(const [arr,side] of [[barsL,0],[barsR,1]]){
+      const idx = side? i : N-1-i; // inner bars near orb
+      const f = Math.sin(t/180 + idx*0.9 + side*1.7)*0.5+0.5;
+      const g = Math.sin(t/97 + idx*1.9)*0.5+0.5;
+      const h = 22 + (130*amp)*(0.35+0.65*(f*0.6+g*0.4)) + 14*wob*f;
+      arr[i].style.height = Math.min(165,h)+'px';
+    }
+  }
+  document.documentElement.style.setProperty('--a',amp.toFixed(3));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+function caption(txt,cls){ $('cap').textContent=txt||'\u00a0'; $('cap').className='caption '+(cls||''); }
+function tick(){ const s=Math.floor((Date.now()-t0)/1000); $('tm').textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0'); }
+function addLog(cls,text){ const d=document.createElement('div'); d.className='m '+cls; d.textContent=text; $('log').appendChild(d); $('log').scrollTop=1e9; }
+
+/* ---------- checks & voices ---------- */
+function checks(extra){
+  const am=voices.filter(v=>/^am/i.test(v.lang));
+  const rows=[
+    [window.isSecureContext?'ok':'bad','HTTPS/localhost'+(window.isSecureContext?'':' — ማይክሮፎን አይሰራም')],
+    [SR?'ok':'bad',SR?'SpeechRecognition አለ':'SpeechRecognition የለም — Chrome ይጠቀሙ'],
+    [synth?'ok':'bad',synth?'speechSynthesis አለ':'speechSynthesis የለም'],
+    [am.length?'ok':'warn',am.length?`የአማርኛ ድምፅ (${am.length})`:'የአማርኛ ድምፅ የለም — Settings ▸ Text-to-speech ▸ Google ▸ Install voice data ▸ አማርኛ'],
+    [navigator.onLine?'ok':'warn',navigator.onLine?'ኢንተርኔት አለ':'ኢንተርኔት የለም']];
+  if(extra) rows.push(extra);
+  $('checks').innerHTML=rows.map(r=>`<div class="st ${r[0]}"><span class="dot"></span>${r[1]}</div>`).join('');
+}
+function loadVoices(){
+  voices=synth?synth.getVoices():[];
+  const am=voices.filter(v=>/^am/i.test(v.lang)); const list=am.length?am:voices;
+  const male=list.find(v=>/male|ameha|man/i.test(v.name)&&!/female/i.test(v.name));
+  $('voice').innerHTML=list.map(v=>`<option value="${v.name}">${v.name} (${v.lang})</option>`).join('')||'<option>ድምፅ አልተገኘም</option>';
+  if(male) $('voice').value=male.name;
+  checks();
+}
+if(synth){ loadVoices(); synth.onvoiceschanged=loadVoices; } else checks();
+
+/* ---------- speaking (natural: chunked, small variation, pauses) ---------- */
+function utter(text,rate,pitch){
+  return new Promise(res=>{
+    const u=new SpeechSynthesisUtterance(text);
+    const v=voices.find(x=>x.name===$('voice').value);
+    if(v){u.voice=v;u.lang=v.lang;} else u.lang='am-ET';
+    u.rate=rate; u.pitch=pitch;
+    let done=false; const fin=()=>{ if(!done){done=true;res();} };
+    u.onend=u.onerror=fin; setTimeout(fin,Math.max(4000,text.length*260));
+    synth.speak(u);
+  });
+}
+async function neural(text,tok){
+  const r=await fetch($('tts').value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,voice:'am-ET-AmehaNeural'})});
+  if(!r.ok) throw new Error('tts');
+  const url=URL.createObjectURL(await r.blob());
+  if(tok!==spkTok) return;
+  await new Promise((res,rej)=>{ const a=new Audio(url); curAudio=a; a.onended=res; a.onerror=rej; a.play().catch(rej); });
+}
+async function speak(text){
+  const tok=++spkTok; setMode('speak');
+  if($('tts').value.trim()){ try{ await neural(text,tok); return; }catch(e){ addLog('s','neural ድምፅ አልተሳካም፤ የአሳሹ ድምፅ ይጠቀማል'); } }
+  if(!synth) return;
+  synth.cancel();
+  const parts=(text.match(/[^።፣?!,.\n]+[።፣?!,.]?/g)||[text]).map(s=>s.trim()).filter(Boolean);
+  const br=+$('rate').value, bp=+$('pitch').value;
+  for(const p of parts){
+    if(tok!==spkTok) return;
+    await utter(p, br+(Math.random()*0.08-0.04), bp+(Math.random()*0.06-0.03));
+    await sleep(/[።?!.]$/.test(p)?240:110);
+  }
+}
+function stopSpeak(){ spkTok++; if(synth) synth.cancel(); if(curAudio){ try{curAudio.pause();}catch(e){} curAudio=null; } }
+
+/* ---------- AI reply ---------- */
+async function reply(userText){
+  history.push({role:'user',content:userText});
+  setMode('think'); let out='';
+  if($('mode').value==='live' && $('endpoint').value.trim()){
+    try{
+      const r=await fetch($('endpoint').value.trim(),{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({system:systemPrompt(),messages:history})});
+      out=(await r.json()).reply||'';
+    }catch(e){ out='ይቅርታ፣ ትንሽ ተቋረጠብኝ፣ እንደገና ንገረኝ።'; }
+  } else {
+    out=scriptQ.length?scriptQ.shift():fillers[fi++%fillers.length];
+    $('qn').textContent=scriptQ.length;
+  }
+  if(!out){ return; }
+  history.push({role:'assistant',content:out});
+  addLog('a',out); caption(out);
+  await speak(out);
+}
+
+/* ---------- listening ---------- */
+async function handleUser(text){
+  text=text.trim(); if(!text) return;
+  busy=true; stopRec(); addLog('u',text); caption(text,'u');
+  await reply(text);
+  busy=false; resume();
+}
+function resume(){ if(active) startRec(); else setMode('idle'); }
+function startRec(){
+  if(!SR||!active||busy) return;
+  rec=new SR(); rec.lang='am-ET'; rec.interimResults=true; rec.continuous=false;
+  rec.onstart=()=>setMode('listen');
+  rec.onresult=e=>{
+    let fin='',itm='';
+    for(let i=e.resultIndex;i<e.results.length;i++){ (e.results[i].isFinal?(fin+=e.results[i][0].transcript):(itm+=e.results[i][0].transcript)); }
+    if(itm){ caption(itm,'u'); amp=Math.min(1,amp+0.25); }
+    if(fin) handleUser(fin);
+  };
+  rec.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){ addLog('s','ማይክሮፎን አልተፈቀደም — 🔒 ▸ ፈቃዶች ▸ ማይክሮፎን'); caption('ማይክሮፎን አልተፈቀደም'); stopAll(); }
+    else if(e.error==='language-not-supported'){ addLog('s','አሳሹ am-ET አይደግፍም'); stopAll(); }
+  };
+  rec.onend=()=>{ if(active&&!busy) setTimeout(startRec,250); };
+  try{rec.start();}catch(e){}
+}
+function stopRec(){ if(rec){ rec.onend=null; try{rec.abort();}catch(e){} rec=null; } }
+function stopAll(){ active=false; busy=false; stopRec(); stopSpeak(); clearInterval(tInt); setMode('idle'); }
+
+async function startConv(){
+  if(active) return;
+  if(!SR){ caption('ይህ አሳሽ ድምፅ ማወቂያ የለውም — Chrome ይጠቀሙ'); return; }
+  try{ const s=await navigator.mediaDevices.getUserMedia({audio:true}); s.getTracks().forEach(t=>t.stop()); checks(['ok','ማይክሮፎን ተፈቅዷል']); }
+  catch(e){
+    checks(['bad','ማይክሮፎን ተከልክሏል: '+(e.name||'')]);
+    caption(inFrame ? 'ይህ ቅድመ እይታ ማይክሮፎን አይፈቅድም — ፋይሉን አውርደው በ Chrome ይክፈቱ' : 'ማይክሮፎን መክፈት አልተቻለም — በአድራሻ አሞሌው 🔒 ▸ ፈቃዶች ▸ ማይክሮፎን ይፍቀዱ');
+    return;
+  }
+  active=true; history=[]; t0=Date.now(); clearInterval(tInt); tInt=setInterval(tick,500); tick();
+  const g=GREET[cfg.purpose](cfg.name?' '+cfg.name:'');
+  history.push({role:'assistant',content:g}); addLog('a',g); caption(g);
+  busy=true; await speak(g); busy=false; resume();
+}
+
+/* ---------- UI wiring ---------- */
+$('orbwrap').onclick=()=>{ if(active){ stopAll(); } else { $('ov').classList.add('show'); } };
+$('bSet').onclick=()=>$('ov').classList.add('show');
+$('xClose').onclick=()=>$('ov').classList.remove('show');
+$('fGo').onclick=()=>{ readCfg(); $('ov').classList.remove('show'); startConv(); };
+$('bDrw').onclick=()=>$('drawer').classList.toggle('show');
+$('dClose').onclick=()=>$('drawer').classList.remove('show');
+
+$('asUser').onclick=async()=>{ const t=$('inject').value.trim(); if(!t) return; $('inject').value=''; busy=true; stopRec(); addLog('u',t); caption(t,'u'); await reply(t); busy=false; resume(); };
+$('asAI').onclick=async()=>{ const t=$('inject').value.trim(); if(!t) return; $('inject').value=''; busy=true; stopRec(); history.push({role:'assistant',content:t}); addLog('a',t); caption(t); await speak(t); busy=false; resume(); };
+$('queue').onclick=()=>{ const t=$('inject').value.trim(); if(!t) return; t.split('\n').filter(Boolean).forEach(x=>scriptQ.push(x)); $('inject').value=''; $('qn').textContent=scriptQ.length; };
+$('test').onclick=async()=>{ busy=true; await speak('ሰላም፣ እንዴት ነው? ዛሬ እንዴት ዋልክ?'); busy=false; resume(); };
+$('rate').oninput=()=>$('rv').textContent=(+$('rate').value).toFixed(2);
+$('pitch').oninput=()=>$('pv').textContent=(+$('pitch').value).toFixed(2);
+
+let inFrame=false; try{ inFrame = window.self!==window.top; }catch(e){ inFrame=true; }
+loadCfg(); setMode('idle');
+if(inFrame) caption('ይህ ቅድመ እይታ ነው — ማይክሮፎን ለመጠቀም ፋይሉን አውርደው በ Chrome ይክፈቱ');
+</script>
+</body>
+</html>
